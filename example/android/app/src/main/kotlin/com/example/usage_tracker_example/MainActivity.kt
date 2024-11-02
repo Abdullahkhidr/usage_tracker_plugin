@@ -1,4 +1,4 @@
-package com.example.usage_tracker_example
+package akm.usage_tracker.plugin_example
 
 import io.flutter.embedding.android.FlutterActivity
 

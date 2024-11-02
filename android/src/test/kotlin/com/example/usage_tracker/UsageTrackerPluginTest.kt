@@ -1,4 +1,4 @@
-package com.example.usage_tracker
+package akm.usage_tracker.plugin
 
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
