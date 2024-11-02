@@ -51,10 +51,6 @@ class _AppUsageScreenState extends State<AppUsageScreen> {
         _appUsageData = data
           ..sort((a, b) =>
               b.totalTimeInForeground.compareTo(a.totalTimeInForeground));
-        for (var element in _appUsageData) {
-          print(
-              "name: ${element.appName}, usage: ${element.totalTimeInForeground.inMinutes}");
-        }
       });
     } else {
       debugPrint("Permission not granted");
