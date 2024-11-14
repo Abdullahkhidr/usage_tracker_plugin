@@ -1,20 +1,19 @@
 package akm.usage_tracker.plugin
 
-import androidx.annotation.NonNull
+import android.app.AppOpsManager
+import android.app.usage.UsageStatsManager
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import android.util.Log
+import androidx.annotation.RequiresApi
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import android.content.Intent
-import android.provider.Settings
-import android.app.AppOpsManager
-import android.os.Build
-import androidx.annotation.RequiresApi
-import android.app.usage.UsageStatsManager
-import android.content.Context
-import android.app.usage.UsageEvents
 
 
-class UsageTrackerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler {
+class UsageTrackerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
 
@@ -24,31 +23,36 @@ class UsageTrackerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler {
         context = binding.applicationContext
     }
 
-    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP_MR1)
+    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "getPlatformVersion" -> {
                 result.success("Android ${android.os.Build.VERSION.RELEASE}")
             }
+
             "hasPermission" -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    result.success(hasUsageStatsPermission())
-                } else {
-                    result.error("UNSUPPORTED", "Unsupported Android version", null)
-                }
+                result.success(hasUsageStatsPermission())
             }
+
             "requestPermission" -> {
                 requestUsageStatsPermission()
                 result.success(null)
             }
+
             "getAppUsageDataInRange" -> {
-                val startTime = call.argument<Long>("startTime") ?: return result.error("INVALID_ARGUMENT", "Missing startTime", null)
-                val endTime = call.argument<Long>("endTime") ?: return result.error("INVALID_ARGUMENT", "Missing endTime", null)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    result.success(getAppUsageDurationInRange(startTime, endTime))
-                } else {
-                    result.error("UNSUPPORTED", "Unsupported Android version", null)
-                }
+                val startTime = call.argument<Long>("startTime") ?: return result.error(
+                    "INVALID_ARGUMENT",
+                    "Missing startTime",
+                    null
+                )
+                val endTime = call.argument<Long>("endTime") ?: return result.error(
+                    "INVALID_ARGUMENT",
+                    "Missing endTime",
+                    null
+                )
+                result.success(getAppUsageDurationInRange(startTime, endTime))
             }
+
             else -> result.notImplemented()
         }
     }
@@ -57,7 +61,6 @@ class UsageTrackerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler {
         channel.setMethodCallHandler(null)
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun hasUsageStatsPermission(): Boolean {
         val appOpsManager = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
         val mode = appOpsManager.checkOpNoThrow(
@@ -74,41 +77,35 @@ class UsageTrackerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler {
         context.startActivity(intent)
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun getAppUsageDurationInRange(startTime: Long, endTime: Long): List<Map<String, Any?>> {
-        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP_MR1)
+    private fun getAppUsageDurationInRange(
+        startTime: Long,
+        endTime: Long
+    ): List<Map<String, Any?>> {
+        val usageStatsManager =
+            context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val usageStatsList = usageStatsManager.queryUsageStats(
             UsageStatsManager.INTERVAL_DAILY,
             startTime,
             endTime
         )
-        
-        val packageManager = context.packageManager
-        val appUsageData = mutableListOf<Map<String, Any?>>()
-        
-        if (usageStatsList.isNullOrEmpty()) {
-            return appUsageData
-        }
+
+        val appUsageData = mutableMapOf<String, Long>()
 
         for (usageStats in usageStatsList) {
             try {
-                val appInfo = packageManager.getApplicationInfo(usageStats.packageName, 0)
-                
-                val appData = mapOf(
-                    "packageName" to usageStats.packageName,
-                    "appName" to packageManager.getApplicationLabel(appInfo).toString(),
-                    "totalTimeInForeground" to usageStats.totalTimeInForeground,
-                    "versionName" to packageManager.getPackageInfo(usageStats.packageName, 0).versionName, 
-                    "versionCode" to packageManager.getPackageInfo(usageStats.packageName, 0).versionCode
-                )
-                appUsageData.add(appData)
+                appUsageData[usageStats.packageName] =
+                    (appUsageData[usageStats.packageName] ?: 0L) + usageStats.totalTimeInForeground
             } catch (e: Exception) {
-                
+                Log.e("UsageTracker", "Error getting app usage data: ${e.message}")
             }
         }
 
-        return appUsageData
-
+        return appUsageData.map { (packageName, totalTime) ->
+            mapOf(
+                "packageName" to packageName,
+                "totalTimeInForeground" to totalTime
+            )
+        }
     }
-
 }

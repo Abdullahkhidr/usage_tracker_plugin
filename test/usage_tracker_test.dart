@@ -18,24 +18,15 @@ class MockUsageTrackerPlatform
     return [
       AppUsageData(
         packageName: "com.example.app1",
-        appName: "Example App 1",
         totalTimeInForeground: const Duration(hours: 1),
-        versionName: "1.0.0",
-        versionCode: 1,
       ),
       AppUsageData(
         packageName: "com.example.app2",
-        appName: "Example App 2",
         totalTimeInForeground: const Duration(hours: 2),
-        versionName: "2.0.0",
-        versionCode: 2,
       ),
       AppUsageData(
         packageName: "com.example.app3",
-        appName: "Example App 3",
         totalTimeInForeground: const Duration(hours: 3),
-        versionName: "1.5.0",
-        versionCode: 3,
       ),
     ];
   }

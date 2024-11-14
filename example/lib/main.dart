@@ -68,20 +68,15 @@ class _AppUsageScreenState extends State<AppUsageScreen> {
           return Padding(
             padding: const EdgeInsets.all(8.0).copyWith(bottom: 2),
             child: ListTile(
-                tileColor: Colors.grey[100],
-                shape: RoundedRectangleBorder(
-                    side: const BorderSide(color: Colors.black45),
-                    borderRadius: BorderRadius.circular(10)),
-                title: Text(appInfo.appName,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(appInfo.packageName),
-                    Text(
-                        "Usage: ${(appInfo.totalTimeInForeground.inSeconds / 60).toStringAsFixed(2)} minutes"),
-                  ],
-                )),
+              tileColor: Colors.grey[100],
+              shape: RoundedRectangleBorder(
+                  side: const BorderSide(color: Colors.black45),
+                  borderRadius: BorderRadius.circular(10)),
+              title: Text(appInfo.packageName,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(
+                  "Usage: ${(appInfo.totalTimeInForeground.inSeconds / 60).toStringAsFixed(2)} minutes"),
+            ),
           );
         },
       ),
