@@ -1,7 +1,7 @@
 name: usage_tracker
-description: "A Flutter plugin for tracking app usage data on Android, including time spent in foreground and other app usage metrics."
+description: A Flutter plugin to track the total time an app is in the foreground over a specified date range, providing insights into app usage duration.
 version: 0.0.1
-homepage: https://github.com/yourusername/usage_tracker  # Replace with the actual GitHub or documentation link
+homepage: https://github.com/Abdullahkhidr/usage_tracker_plugin
 
 environment:
   sdk: ">=3.5.3 <4.0.0"
@@ -23,7 +23,3 @@ flutter:
       android:
         package: akm.usage_tracker.plugin
         pluginClass: UsageTrackerPlugin
-
-author:
-  name: "Abdullah Khidr"
-  email: "abdullahkhidr52@gmail.com"
