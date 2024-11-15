@@ -1,6 +1,7 @@
 package akm.usage_tracker.plugin
 
 import android.app.AppOpsManager
+import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
@@ -82,22 +83,27 @@ class UsageTrackerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         startTime: Long,
         endTime: Long
     ): List<Map<String, Any?>> {
-        val usageStatsManager =
-            context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val usageStatsList = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY,
-            startTime,
-            endTime
-        )
+        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
 
         val appUsageData = mutableMapOf<String, Long>()
+        var lastEvent: UsageEvents.Event? = null
 
-        for (usageStats in usageStatsList) {
-            try {
-                appUsageData[usageStats.packageName] =
-                    (appUsageData[usageStats.packageName] ?: 0L) + usageStats.totalTimeInForeground
-            } catch (e: Exception) {
-                Log.e("UsageTracker", "Error getting app usage data: ${e.message}")
+        while (usageEvents.hasNextEvent()) {
+            val event = UsageEvents.Event()
+            usageEvents.getNextEvent(event)
+
+            if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
+                lastEvent = event
+            } else if (event.eventType == UsageEvents.Event.ACTIVITY_PAUSED && lastEvent != null) {
+                if (lastEvent.packageName == event.packageName) {
+                    val foregroundTime = event.timeStamp - lastEvent.timeStamp
+                    if (foregroundTime > 0) {
+                        appUsageData[event.packageName] =
+                            (appUsageData[event.packageName] ?: 0L) + foregroundTime
+                    }
+                }
+                lastEvent = null
             }
         }
 
@@ -107,5 +113,6 @@ class UsageTrackerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 "totalTimeInForeground" to totalTime
             )
         }
-    }
+    }   
+
 }

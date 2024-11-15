@@ -1,4 +1,3 @@
-import 'package:usage_tracker/app_usage_data.dart';
 import 'usage_tracker_platform_interface.dart';
 
 import 'dart:async';
@@ -19,7 +18,7 @@ abstract class UsageTracker {
   }
 
   // Get app usage data within a specific time range
-  static Future<List<AppUsageData>> getAppUsageDataInRange(
+  static Future<Map<String, int>> getAppUsageDataInRange(
       DateTime startTime, DateTime endTime) async {
     return await UsageTrackerPlatform.instance
         .getAppUsageDataInRange(startTime, endTime);

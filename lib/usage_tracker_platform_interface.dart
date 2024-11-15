@@ -1,6 +1,5 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import 'app_usage_data.dart';
 import 'usage_tracker_method_channel.dart';
 
 abstract class UsageTrackerPlatform extends PlatformInterface {
@@ -36,7 +35,7 @@ abstract class UsageTrackerPlatform extends PlatformInterface {
     throw UnimplementedError('requestPermission() has not been implemented.');
   }
 
-  Future<List<AppUsageData>> getAppUsageDataInRange(
+  Future<Map<String, int>> getAppUsageDataInRange(
       DateTime startTime, DateTime endTime) async {
     throw UnimplementedError(
         'getAppUsageDataInRange() has not been implemented.');

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:usage_tracker/app_usage_data.dart';
 import 'package:usage_tracker/usage_tracker.dart';
 
 void main() {
@@ -26,7 +25,7 @@ class AppUsageScreen extends StatefulWidget {
 }
 
 class _AppUsageScreenState extends State<AppUsageScreen> {
-  List<AppUsageData> _appUsageData = [];
+  Map<String, int> _appUsageData = {};
 
   @override
   void initState() {
@@ -48,9 +47,7 @@ class _AppUsageScreenState extends State<AppUsageScreen> {
           DateTime(now.year, now.month, now.day), now);
 
       setState(() {
-        _appUsageData = data
-          ..sort((a, b) =>
-              b.totalTimeInForeground.compareTo(a.totalTimeInForeground));
+        _appUsageData = data;
       });
     } else {
       debugPrint("Permission not granted");
@@ -64,7 +61,7 @@ class _AppUsageScreenState extends State<AppUsageScreen> {
       body: ListView.builder(
         itemCount: _appUsageData.length,
         itemBuilder: (context, index) {
-          final appInfo = _appUsageData[index];
+          final appInfo = _appUsageData.entries.toList()[index];
           return Padding(
             padding: const EdgeInsets.all(8.0).copyWith(bottom: 2),
             child: ListTile(
@@ -72,10 +69,10 @@ class _AppUsageScreenState extends State<AppUsageScreen> {
               shape: RoundedRectangleBorder(
                   side: const BorderSide(color: Colors.black45),
                   borderRadius: BorderRadius.circular(10)),
-              title: Text(appInfo.packageName,
+              title: Text(appInfo.key,
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text(
-                  "Usage: ${(appInfo.totalTimeInForeground.inSeconds / 60).toStringAsFixed(2)} minutes"),
+                  "Usage: ${(appInfo.value / 1000 / 60).toStringAsFixed(2)} minutes"),
             ),
           );
         },

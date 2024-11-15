@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:usage_tracker/app_usage_data.dart';
 
 import 'usage_tracker_platform_interface.dart';
 
@@ -29,7 +28,7 @@ class MethodChannelUsageTracker extends UsageTrackerPlatform {
   }
 
   @override
-  Future<List<AppUsageData>> getAppUsageDataInRange(
+  Future<Map<String, int>> getAppUsageDataInRange(
       DateTime startTime, DateTime endTime) async {
     final int startTimeMillis = startTime.millisecondsSinceEpoch;
     final int endTimeMillis = endTime.millisecondsSinceEpoch;
@@ -41,9 +40,10 @@ class MethodChannelUsageTracker extends UsageTrackerPlatform {
         'endTime': endTimeMillis,
       },
     );
-
-    return result
-        .map((data) => AppUsageData.fromMap(Map<String, dynamic>.from(data)))
-        .toList();
+    Map<String, int> map = {};
+    for (var item in result) {
+      map[item['packageName']] = item['totalTimeInForeground'];
+    }
+    return map;
   }
 }
