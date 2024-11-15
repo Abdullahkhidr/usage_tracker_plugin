@@ -147,7 +147,7 @@ Future requestPermission();
 Retrieves the app usage data (foreground time) for all apps within the specified time range.
 
 ```
-Future> getAppUsageDataInRange(
+Future getAppUsageDataInRange(
     DateTime startTime, DateTime endTime);
 ```
 
