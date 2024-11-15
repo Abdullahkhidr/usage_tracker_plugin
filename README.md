@@ -1,156 +1,165 @@
 # Usage Tracker Plugin
 
-A Flutter plugin that enables apps to access and track app usage data on Android. This plugin provides methods to check and request permissions, as well as to retrieve app usage statistics within a specified time range.
+A Flutter plugin for tracking app usage statistics on Android. This plugin provides methods to check for permissions, request permissions, and retrieve the usage data of apps within a specified time range.
 
 ## Features
 
-*   Check if the app has permission to access usage stats
-*   Request usage stats permission
-*   Retrieve app usage data within a specific time range
+*   **Check Permission**: Check if the app has permission to access usage statistics.
+*   **Request Permission**: Request usage statistics permission from the user.
+*   **Get App Usage Data**: Retrieve app usage data (foreground time) for apps within a specific time range.
+*   **Platform Version**: Get the platform version of the Android device.
 
 ## Installation
 
-Add `usage_tracker` to your `pubspec.yaml` file:
+To use this plugin in your Flutter project, add the following dependency to your `pubspec.yaml` file:
+
 ```
 dependencies:
-  usage_tracker: ^1.0.0
+  usage_tracker: ^0.1.0
 ```
 
-Then, run:
+Then, run the following command to install the plugin:
+
 ```
 flutter pub get
 ```
-## Permissions
 
-This plugin requires permission to access app usage data. On Android, the permission must be granted manually by navigating to **Settings > Security > Usage Access** and enabling the app.
+## How It Works
 
-## Usage
+1.  **Permission Request Handling**: The plugin automatically checks if the app has permission to access usage statistics and can prompt the user to enable it if necessary. When `requestPermission()` is called, it opens the device’s "Usage Access" settings so the user can grant the permission manually.
+2.  **No Need for Permission Handling in App Code**: You **do not need to request or handle the permission yourself**. The plugin takes care of checking and requesting the necessary permission for you. The only thing you need to do is ensure the plugin is installed and correctly initialized in your project.
 
-Import `usage_tracker` into your Dart code:
-```
-import 'package:usage_tracker/usage_tracker.dart';
-```
-### Check Permission
+## Example
 
-Use `hasPermission` to check if the app has the necessary usage stats permission:
-```
-bool hasPermission = await UsageTracker.hasPermission();
-```
-### Request Permission
+Here's an example of how to use the plugin in your app. The plugin will handle permission requests automatically, so you can focus on accessing the app usage data:
 
-Use `requestPermission` to navigate the user to the settings page to grant usage stats permission:
-```
-await UsageTracker.requestPermission();
-```
-### Get App Usage Data
-
-Use `getAppUsageDataInRange` to retrieve app usage data within a specified time range:
-```
-DateTime startTime = DateTime.now().subtract(Duration(days: 1));
-DateTime endTime = DateTime.now();
-List usageData = await UsageTracker.getAppUsageDataInRange(startTime, endTime);
-```
-
-### Example
-
-Here's a complete example of how to use the plugin:
 ```
 import 'package:flutter/material.dart';
 import 'package:usage_tracker/usage_tracker.dart';
 
-void main() => runApp(MyApp());
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: UsageStatsScreen(),
-    );
-  }
+void main() {
+  runApp(MyApp());
 }
 
-class UsageStatsScreen extends StatefulWidget {
+class MyApp extends StatefulWidget {
   @override
-  _UsageStatsScreenState createState() => _UsageStatsScreenState();
+  _MyAppState createState() => _MyAppState();
 }
 
-class _UsageStatsScreenState extends State {
-  List _usageData = [];
+class _MyAppState extends State {
+  String _platformVersion = '';
+  bool _hasPermission = false;
+  Map _appUsageData = {};
 
   @override
   void initState() {
     super.initState();
-    fetchUsageData();
+    _initializeUsageData();
   }
 
-  Future fetchUsageData() async {
-    bool hasPermission = await UsageTracker.hasPermission();
-    if (!hasPermission) {
+  Future _initializeUsageData() async {
+    final platformVersion = await UsageTracker.getPlatformVersion();
+    final hasPermission = await UsageTracker.hasPermission();
+
+    if (hasPermission) {
+      final startTime = DateTime.now().subtract(Duration(days: 1));  // 1 day ago
+      final endTime = DateTime.now();
+      final appUsageData = await UsageTracker.getAppUsageDataInRange(startTime, endTime);
+
+      setState(() {
+        _platformVersion = platformVersion ?? 'Unknown';
+        _hasPermission = hasPermission;
+        _appUsageData = appUsageData;
+      });
+    } else {
+      // Request permission if not granted
       await UsageTracker.requestPermission();
     }
-
-    DateTime startTime = DateTime.now().subtract(Duration(days: 1));
-    DateTime endTime = DateTime.now();
-
-    List usageData = await UsageTracker.getAppUsageDataInRange(startTime, endTime);
-    setState(() {
-      _usageData = usageData;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Usage Stats'),
-      ),
-      body: ListView.builder(
-        itemCount: _usageData.length,
-        itemBuilder: (context, index) {
-          final app = _usageData[index];
-          return ListTile(
-            title: Text(app.appName),
-            subtitle: Text('Time in foreground: ${app.totalTimeInForeground}'),
-          );
-        },
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Usage Tracker Example'),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Platform Version: $_platformVersion'),
+              SizedBox(height: 8),
+              Text('Has Permission: $_hasPermission'),
+              SizedBox(height: 16),
+              Text('App Usage Data (last 24 hours):'),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _appUsageData.length,
+                  itemBuilder: (context, index) {
+                    String packageName = _appUsageData.keys.elementAt(index);
+                    int timeInForeground = _appUsageData[packageName] ?? 0;
+                    return ListTile(
+                      title: Text(packageName),
+                      subtitle: Text('Time in foreground: $timeInForeground ms'),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 ```
 
-## API Reference
+## Methods
 
-### `Future<String?> getPlatformVersion()`
+### getPlatformVersion()
 
-Returns the platform version as a string.
+Returns the platform version of the Android device.
 
-### `Future<bool> hasPermission()`
+```
+Future getPlatformVersion();
+```
 
-Checks if the app has permission to access app usage stats. Returns `true` if permission is granted, otherwise `false`.
+### hasPermission()
 
-### `Future<void> requestPermission()`
+Checks whether the app has permission to access usage statistics.
 
-Requests usage stats permission by navigating to the usage access settings page.
+```
+Future hasPermission();
+```
 
-### `Future<List<AppUsageData>> getAppUsageDataInRange(DateTime startTime, DateTime endTime)`
+### requestPermission()
 
-Fetches app usage data between `startTime` and `endTime`. Returns a list of `AppUsageData`.
+Requests the user to grant permission to access usage statistics. This opens the device's "Usage Access" settings.
 
-#### AppUsageData Class
+```
+Future requestPermission();
+```
 
-Represents usage data for an app.
+### getAppUsageDataInRange(DateTime startTime, DateTime endTime)
 
-*   **packageName**: `String` - The package name of the app
-*   **appName**: `String` - The display name of the app
-*   **totalTimeInForeground**: `Duration` - Time spent in the foreground
-*   **versionName**: `String?` - Version name of the app
-*   **versionCode**: `int` - Version code of the app
+Retrieves the app usage data (foreground time) for all apps within the specified time range.
 
-## Platform-Specific Implementation
+```
+Future> getAppUsageDataInRange(
+    DateTime startTime, DateTime endTime);
+```
 
-This plugin currently supports only Android, as iOS does not provide equivalent APIs for app usage data access.
+*   **startTime**: The start of the time range (e.g., `DateTime.now().subtract(Duration(days: 1))`).
+*   **endTime**: The end of the time range (e.g., `DateTime.now()`).
+*   **Returns**: A map where the key is the package name, and the value is the total time the app was in the foreground (in milliseconds).
 
-## Contributing
+## Troubleshooting
 
-Contributions are welcome! Feel free to submit issues or pull requests.
+*   **Permission Issues**: If the app does not have the `PACKAGE_USAGE_STATS` permission, it will not be able to track app usage. Make sure the user grants permission via the "Usage Access" settings.
+*   **No Data Returned**: If no usage data is returned, ensure that the time range is valid and that usage statistics are available for the requested period.
+
+## Contribution
+
+Feel free to fork the repo and submit pull requests for bug fixes or new features.
